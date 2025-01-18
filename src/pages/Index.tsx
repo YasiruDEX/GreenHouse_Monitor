@@ -38,13 +38,22 @@ const soilData = [
   { time: "20:00", moisture: 65, ph: 6.3 },
 ];
 
+const environmentData = [
+  { time: "00:00", temperature: 25, humidity: 65 },
+  { time: "04:00", temperature: 24, humidity: 68 },
+  { time: "08:00", temperature: 26, humidity: 70 },
+  { time: "12:00", temperature: 28, humidity: 63 },
+  { time: "16:00", temperature: 27, humidity: 65 },
+  { time: "20:00", temperature: 25, humidity: 67 },
+];
+
 const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {/* Key Metrics */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <Card className="p-4">
               <h3 className="text-lg font-medium text-gray-900">Daily Water Demand</h3>
               <p className="text-3xl font-bold text-primary mt-2">2500 L</p>
@@ -52,6 +61,18 @@ const Index = () => {
             <Card className="p-4">
               <h3 className="text-lg font-medium text-gray-900">Target pH Value</h3>
               <p className="text-3xl font-bold text-primary mt-2">6.5</p>
+            </Card>
+            <Card className="p-4">
+              <h3 className="text-lg font-medium text-gray-900">Current Temperature</h3>
+              <p className="text-3xl font-bold text-orange-500 mt-2">
+                {environmentData[environmentData.length - 1].temperature}°C
+              </p>
+            </Card>
+            <Card className="p-4">
+              <h3 className="text-lg font-medium text-gray-900">Current Humidity</h3>
+              <p className="text-3xl font-bold text-blue-500 mt-2">
+                {environmentData[environmentData.length - 1].humidity}%
+              </p>
             </Card>
           </div>
 
@@ -151,7 +172,41 @@ const Index = () => {
             </Card>
           </div>
 
-          {/* Keep existing bell pepper phase card */}
+          {/* Environment Metrics */}
+          <div className="mt-6">
+            <Card className="p-6">
+              <h3 className="text-lg font-medium text-gray-900">Environment Metrics</h3>
+              <div className="mt-4 h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={environmentData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="time" />
+                    <YAxis yAxisId="temp" orientation="left" stroke="#f97316" />
+                    <YAxis yAxisId="humidity" orientation="right" stroke="#3b82f6" />
+                    <Tooltip />
+                    <Line
+                      yAxisId="temp"
+                      type="monotone"
+                      dataKey="temperature"
+                      name="Temperature (°C)"
+                      stroke="#f97316"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      yAxisId="humidity"
+                      type="monotone"
+                      dataKey="humidity"
+                      name="Humidity (%)"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          </div>
+
+          {/* Bell Pepper Growth Phase */}
           <div className="mt-6">
             <Card className="p-6">
               <h3 className="text-lg font-medium text-gray-900">
