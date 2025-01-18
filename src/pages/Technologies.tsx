@@ -3,6 +3,18 @@ import { Card } from "@/components/ui/card";
 const Technologies = () => {
   const technologies = [
     {
+      title: "ESP-NOW",
+      description:
+        "A protocol developed by Espressif that enables multiple ESP32 devices to communicate with each other without using a traditional Wi-Fi connection. Perfect for short-range, low-power communication between sensors and controllers.",
+      icon: "📡",
+    },
+    {
+      title: "LoRa",
+      description:
+        "Long Range (LoRa) technology enables long-distance communication with low power consumption. Ideal for transmitting sensor data from remote greenhouse locations to central monitoring stations.",
+      icon: "🔋",
+    },
+    {
       title: "Automated Irrigation",
       description:
         "Smart watering system that monitors soil moisture and delivers precise amounts of water.",
