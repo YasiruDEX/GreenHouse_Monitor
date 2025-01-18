@@ -3,7 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Navigation from "./components/Navigation";
 import Index from "./pages/Index";
+import About from "./pages/About";
+import Greenhouses from "./pages/Greenhouses";
+import Technologies from "./pages/Technologies";
 
 const queryClient = new QueryClient();
 
@@ -13,9 +17,15 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-        </Routes>
+        <div className="min-h-screen">
+          <Navigation />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/greenhouses" element={<Greenhouses />} />
+            <Route path="/technologies" element={<Technologies />} />
+          </Routes>
+        </div>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
