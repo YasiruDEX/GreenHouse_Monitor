@@ -13,6 +13,8 @@ import {
 import { database } from './../firebase';
 import { ref, onValue } from 'firebase/database';
 import React, { useEffect, useState } from 'react';
+import { FollowerPointerCard } from "@/components/ui/following-pointer";
+
 
 const Index = () => {
   const [data, setData] = useState(null);
@@ -74,6 +76,14 @@ const Index = () => {
         <div className="px-4 py-6 sm:px-0">
           {/* Bell Pepper Growth Phase */}
           <div className="mt-6 mb-6">
+          <FollowerPointerCard
+              title={
+                <TitleComponent
+                  title={"Bell Protector"}
+                  avatar={"favicon.ico"}
+                />
+              }
+            >
             <Card className="p-6">
               <h3 className="text-lg font-medium text-gray-900">
                 Bell Pepper Growth Phase
@@ -98,30 +108,70 @@ const Index = () => {
                 </div>
               </div>
             </Card>
+            </FollowerPointerCard>
           </div>
 
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <FollowerPointerCard
+              title={
+                <TitleComponent
+                  title={"Bell Protector"}
+                  avatar={"favicon.ico"}
+                />
+              }
+            >
             <Card className="p-4">
               <h3 className="text-lg font-medium text-gray-900">Daily Water Demand</h3>
               <p className="text-3xl font-bold text-primary mt-2">{data && data.Daily_Water_Demand ? JSON.stringify(data.Daily_Water_Demand) : 'N/A'} L</p>
             </Card>
+            </FollowerPointerCard>
+
+            <FollowerPointerCard
+              title={
+                <TitleComponent
+                  title={"Bell Protector"}
+                  avatar={"favicon.ico"}
+                />
+              }
+            >
             <Card className="p-4">
               <h3 className="text-lg font-medium text-gray-900">Target pH Value</h3>
               <p className="text-3xl font-bold text-primary mt-2">{data && data.Target_PH ? JSON.stringify(data.Target_PH) : 'N/A'}</p>
             </Card>
+            </FollowerPointerCard>
+
+            <FollowerPointerCard
+              title={
+                <TitleComponent
+                  title={"Bell Protector"}
+                  avatar={"favicon.ico"}
+                />
+              }
+            >
             <Card className="p-4">
               <h3 className="text-lg font-medium text-gray-900">Current Temperature</h3>
               <p className="text-3xl font-bold text-orange-500 mt-2">
                 {environmentData[environmentData.length - 1].temperature}°C
               </p>
             </Card>
+            </FollowerPointerCard>
+
+            <FollowerPointerCard
+              title={
+                <TitleComponent
+                  title={"Bell Protector"}
+                  avatar={"favicon.ico"}
+                />
+              }
+            >
             <Card className="p-4">
               <h3 className="text-lg font-medium text-gray-900">Current Humidity</h3>
               <p className="text-3xl font-bold text-blue-500 mt-2">
                 {environmentData[environmentData.length - 1].humidity}%
               </p>
             </Card>
+            </FollowerPointerCard>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -259,4 +309,22 @@ const Index = () => {
   );
 };
 
+const TitleComponent = ({
+  title,
+  avatar,
+}: {
+  title: string;
+  avatar: string;
+}) => (
+  <div className="flex space-x-2 items-center">
+    <img
+      src={avatar}
+      height={20}
+      width={20}
+      alt="thumbnail"
+      className="rounded-full border-2 border-white"
+    />
+    <p>{title}</p>
+  </div>
+);
 export default Index;
