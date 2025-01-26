@@ -7,7 +7,7 @@ const Greenhouses = () => {
       id: 1,
       name: "Greenhouse A",
       location: {
-        name: "North Wing",
+        name: "Hatton",
         coordinates: {
           lat: 51.5074,
           lng: -0.1278
@@ -20,7 +20,7 @@ const Greenhouses = () => {
       id: 2,
       name: "Greenhouse B",
       location: {
-        name: "South Wing",
+        name: "Jaffna",
         coordinates: {
           lat: 51.5074,
           lng: -0.1268
@@ -33,14 +33,14 @@ const Greenhouses = () => {
       id: 3,
       name: "Greenhouse C",
       location: {
-        name: "East Wing",
+        name: "Trincomalee",
         coordinates: {
           lat: 51.5074,
           lng: -0.1258
         }
       },
       crops: "Bell Peppers",
-      status: "Active",
+      status: "Not Available",
     },
   ];
 
@@ -85,10 +85,10 @@ const Greenhouses = () => {
                 </div>
               </dl>
               <div className="mt-6">
-                <GreenhouseMap
+                {/* <GreenhouseMap
                   location={greenhouse.location.coordinates}
                   name={greenhouse.name}
-                />
+                /> */}
               </div>
             </Card>
           ))}
