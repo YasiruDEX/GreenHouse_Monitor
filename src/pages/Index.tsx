@@ -234,7 +234,7 @@ const Index = () => {
               </div>
             </Card>
 
-            {/* pH Tank Levels */}
+            {/* pH Tank Levels
             <Card className="p-6">
               <h3 className="text-lg font-medium text-gray-900">pH Tank Levels</h3>
               <div className="mt-4 h-64">
@@ -261,7 +261,7 @@ const Index = () => {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-            </Card>
+            </Card> */}
 
             {/* Soil Metrics */}
             <Card className="p-6">
