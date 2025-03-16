@@ -11,13 +11,16 @@ import {
   Line,
 } from "recharts";
 import { database } from './../firebase';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, update } from 'firebase/database';
 import React, { useEffect, useState } from 'react';
 import { FollowerPointerCard } from "@/components/ui/following-pointer";
+import { Switch } from "@headlessui/react"; // Importing switch from headless UI
 
 
 const Index = () => {
   const [data, setData] = useState(null);
+  const [fanStatus, setFanStatus] = useState(false); // Track fan status
+  const [npkData, setNpkData] = useState(null); // Track NPK sensor data
 
   useEffect(() => {
     const dbRef = ref(database, '/GreenHouse_1');
@@ -25,6 +28,26 @@ const Index = () => {
       setData(snapshot.val());
     });
   }, []);
+
+    // Fetching NPK sensor data
+    const fetchNPKData = () => {
+      const npkRef = ref(database, '/NPK_Sensor_Data');
+      onValue(npkRef, (snapshot) => {
+        setNpkData(snapshot.val());
+      });
+    };
+
+    // Toggle Fan Control
+    const toggleFan = () => {
+      const newStatus = !fanStatus;
+      setFanStatus(newStatus);
+  
+      // Update Firebase with new fan status
+      const fanControlRef = ref(database, '/GreenHouse_1/Fan_Control');
+      update(fanControlRef, {
+        status: newStatus
+      });
+    };
 
   // Helper function to get the sensor value or 'N/A'
   const getSensorValue = (sensorData, index) => {
@@ -303,6 +326,57 @@ const Index = () => {
               </div>
             </Card>
           </div>
+
+          {/* Fan Control */}
+          <div className="flex items-center space-x-4 mt-6">
+            <h3 className="text-lg font-medium text-gray-900">Fan Control</h3>
+            <Switch
+              checked={fanStatus}
+              onChange={toggleFan}
+              className={`${
+                fanStatus ? "bg-green-500" : "bg-gray-300"
+              } relative inline-flex items-center h-6 rounded-full w-11`}
+            >
+              <span className="sr-only">Enable Fan</span>
+              <span
+                className={`${
+                  fanStatus ? "translate-x-6" : "translate-x-1"
+                } inline-block w-4 h-4 transform bg-white rounded-full`}
+              />
+            </Switch>
+          </div>
+
+          {/* Move Shift Button */}
+          <div className="mt-6 flex items-center justify-between">
+            {/* Move Shift Button */}
+            <div>
+              <button
+                onClick={fetchNPKData}
+                className="px-6 py-3 text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-md shadow-lg transform transition-all duration-300 hover:scale-105 hover:from-blue-600 hover:to-indigo-700"
+              >
+                Move Shift
+              </button>
+            </div>
+
+            {/* NPK Readings */}
+            {npkData && (
+              <div className="mt-4 grid grid-cols-3 gap-4">
+                <div className="bg-green-100 p-4 rounded-lg shadow-lg text-center">
+                  <div className="text-2xl font-semibold text-green-600">Nitrogen</div>
+                  <p className="text-xl font-bold text-green-700 mt-2">{npkData?.nitrogen || "N/A"}</p>
+                </div>
+                <div className="bg-red-100 p-4 rounded-lg shadow-lg text-center">
+                  <div className="text-2xl font-semibold text-red-600">Phosphorus</div>
+                  <p className="text-xl font-bold text-red-700 mt-2">{npkData?.phosphorus || "N/A"}</p>
+                </div>
+                <div className="bg-yellow-100 p-4 rounded-lg shadow-lg text-center">
+                  <div className="text-2xl font-semibold text-yellow-600">Potassium</div>
+                  <p className="text-xl font-bold text-yellow-700 mt-2">{npkData?.potassium || "N/A"}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
     </div>
