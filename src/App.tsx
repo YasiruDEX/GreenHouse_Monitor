@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import About from "./pages/About";
 import Greenhouses from "./pages/Greenhouses";
 import Technologies from "./pages/Technologies";
+import MineralMonitor from "./pages/MineralMonitor";
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -26,6 +27,7 @@ const App = () => {
               <Route path="/about" element={<About />} />
               <Route path="/greenhouses" element={<Greenhouses />} />
               <Route path="/technologies" element={<Technologies />} />
+              <Route path="/mineral-monitor" element={<MineralMonitor />} />
             </Routes>
           </div>
         </BrowserRouter>

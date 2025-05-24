@@ -19,7 +19,10 @@ import { Switch } from "@headlessui/react"; // Importing switch from Headless UI
 const Index = () => {
   const [data, setData] = useState(null);
   const [fanStatus, setFanStatus] = useState(false); // Track fan status
+  const [humidifierStatus, setHumidifierStatus] = useState(false);
   const [npkData, setNpkData] = useState(null); // Track NPK sensor data
+  const [waterStatus, setWaterStatus] = useState(false);
+  const [npkCommandStatus, setNpkCommandStatus] = useState(false);
 
   useEffect(() => {
     // Listen to GreenHouse_1 changes
@@ -49,15 +52,47 @@ const Index = () => {
     // Update fan status in Firebase
     const fanControlRef = ref(database, "/GreenHouse_1/Fan_Control");
     update(fanControlRef, {
-      status: newStatus,
+      fan_status: newStatus,
     });
+  };
+
+  // Toggle Humidifier Control
+  const toggleHumidifier = () => {
+    const newStatus = !humidifierStatus;
+    setHumidifierStatus(newStatus);
+    const humidifierControlRef = ref(database, "/GreenHouse_1/Fan_Control");
+    update(humidifierControlRef, {
+      humidifier_status: newStatus,
+    });
+  };
+
+  // Water Flow Control Handler
+  const handleWaterFlow = () => {
+    const waterControlRef = ref(database, "/GreenHouse_1/Water_Control");
+    update(waterControlRef, { command: true });
+    setWaterStatus(true);
+    setTimeout(() => {
+      update(waterControlRef, { command: false });
+      setWaterStatus(false);
+    }, 5000);
+  };
+
+  // NPK Command Control Handler
+  const handleNpkCommand = () => {
+    const npkControlRef = ref(database, "/NPK_Sensor_Data");
+    update(npkControlRef, { command: true });
+    setNpkCommandStatus(true);
+    setTimeout(() => {
+      update(npkControlRef, { command: false });
+      setNpkCommandStatus(false);
+    }, 5000);
   };
 
   // Helper function to get sensor values or 'N/A'
   const getSensorValue = (sensorData, index) => {
     return sensorData && sensorData[index]
       ? JSON.stringify(sensorData[index])
-      : "N/A";
+      : 0;
   };
 
   const waterTankData = [
@@ -372,6 +407,38 @@ const Index = () => {
               </div>
             </Card>
 
+            <Card className="p-6">
+              <h3 className="text-lg font-medium text-gray-900">
+                PH Tank Levels
+              </h3>
+              <div className="mt-4 h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={phTankData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="time" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area
+                    type="monotone"
+                    dataKey="acid"
+                    name="Acid Tank"
+                    stroke="#f43f5e"
+                    fill="#fecdd3"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="base"
+                    name="Base Tank"
+                    stroke="#3b82f6"
+                    fill="#bfdbfe"
+                  />
+                </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </Card> 
+
+            
+
             {/* Soil Metrics */}
             <Card className="p-6">
               <h3 className="text-lg font-medium text-gray-900">Soil Metrics</h3>
@@ -436,117 +503,172 @@ const Index = () => {
                 </ResponsiveContainer>
               </div>
             </Card>
-          </div>
 
-          {/* Fan Control & NPK Sensor Data */}
-          <div className="mt-6">
-            <div className="flex items-center justify-between">
-              {/* Refresh Button */}
-              <div>
-                <button
-                  onClick={fetchNPKData}
-                  className="px-6 py-3 text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-md shadow-lg transform transition-all duration-300 hover:scale-105 hover:from-blue-600 hover:to-indigo-700"
-                >
-                  Refresh NPK Data
-                </button>
-              </div>
-
+            {/* Fan Control & Water Flow Control - Flex Row */}
+            <div className="mt-6 flex flex-wrap gap-6">
               {/* Fan Control */}
-              <div className="flex items-center space-x-4">
-                <h3 className="text-lg font-medium text-gray-900">Fan Control</h3>
-                <Switch
-                  checked={fanStatus}
-                  onChange={toggleFan}
-                  className={`${
-                    fanStatus ? "bg-green-500" : "bg-gray-300"
-                  } relative inline-flex items-center h-6 rounded-full w-11`}
-                >
-                  <span className="sr-only">Enable Fan</span>
-                  <span
-                    className={`${
-                      fanStatus ? "translate-x-6" : "translate-x-1"
-                    } inline-block w-4 h-4 transform bg-white rounded-full`}
-                  />
-                </Switch>
-              </div>
+              <Card className="p-6 w-full md:w-[48%]">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Fan Control</h3>
+                <div className="flex justify-center items-center gap-12 h-40">
+                  {/* Fan Button with Label */}
+                  <div className="flex flex-col items-center">
+                    <button
+                      onClick={toggleFan}
+                      className={`w-20 h-20 rounded-lg flex items-center justify-center transition-colors ${
+                        fanStatus ? "bg-green-500" : "bg-gray-300"
+                      }`}
+                      title={fanStatus ? "Turn Fan Off" : "Turn Fan On"}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-10 w-10 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66 6.34l1.42 1.42M4.93 4.93l1.42 1.42M16.24 7.76l1.42-1.42M4.93 19.07l1.42-1.42M12 6a6 6 0 000 12a6 6 0 000-12z"
+                        />
+                      </svg>
+                    </button>
+                    <p className="mt-2 text-sm text-gray-700 font-medium">Fan</p>
+                  </div>
+
+                  {/* Humidifier Button with Label */}
+                  <div className="flex flex-col items-center">
+                    <button
+                      onClick={toggleHumidifier}
+                      className={`w-20 h-20 rounded-lg flex items-center justify-center transition-colors ${
+                        humidifierStatus ? "bg-green-500" : "bg-gray-300"
+                      }`}
+                      title="Toggle Humidifier"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-10 w-10 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 3C10 6 6 9 6 13a6 6 0 0012 0c0-4-4-7-6-10z"
+                        />
+                      </svg>
+                    </button>
+                    <p className="mt-2 text-sm text-gray-700 font-medium">Humidifier</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Water Flow Control */}
+              <Card className="p-6 w-full md:w-[48%] bg-gray-100">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Water Flow Control</h3>
+                <div className="flex flex-col justify-center items-center h-40">
+                  <button
+                    onClick={handleWaterFlow}
+                    className={`w-20 h-20 rounded-lg flex items-center justify-center transition duration-300 ${
+                      waterStatus ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-300 hover:bg-gray-400"
+                    }`}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-10 w-10 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 2C8 6 6 10 6 13a6 6 0 0012 0c0-3-2-7-6-11z"
+                      />
+                    </svg>
+                  </button>
+                  <p className="mt-2 text-sm text-gray-700 font-medium flex items-center gap-1">
+                    {/* Water icon */}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 2C8 6 6 10 6 13a6 6 0 0012 0c0-3-2-7-6-11z"
+                      />
+                    </svg>
+                    <span className="text-gray-500">Water Flow</span>
+                  </p>
+                </div>
+              </Card>
             </div>
+            {/* NPK Overview */}
+            {/* <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+              
+              <Card className="p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Current NPK Readings</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-green-100 p-4 rounded-lg shadow text-center">
+                    <div className="text-2xl font-semibold text-green-600">Nitrogen</div>
+                    <p className="text-xl font-bold text-green-700 mt-2">
+                      {npkData?.nitrogen || "N/A"}
+                    </p>
+                  </div>
+                  <div className="bg-red-100 p-4 rounded-lg shadow text-center">
+                    <div className="text-2xl font-semibold text-red-600">Phosphorus</div>
+                    <p className="text-xl font-bold text-red-700 mt-2">
+                      {npkData?.phosphorus || "N/A"}
+                    </p>
+                  </div>
+                  <div className="bg-yellow-100 p-4 rounded-lg shadow text-center">
+                    <div className="text-2xl font-semibold text-yellow-600">Potassium</div>
+                    <p className="text-xl font-bold text-yellow-700 mt-2">
+                      {npkData?.potassium || "N/A"}
+                    </p>
+                  </div>
+                </div>
+              </Card>
 
-            {/* Current NPK Readings */}
-            {npkData && (
-              <div className="mt-4 grid grid-cols-3 gap-4">
-                <div className="bg-green-100 p-4 rounded-lg shadow-lg text-center">
-                  <div className="text-2xl font-semibold text-green-600">
-                    Nitrogen
-                  </div>
-                  <p className="text-xl font-bold text-green-700 mt-2">
-                    {npkData?.nitrogen || "N/A"}
-                  </p>
-                </div>
-                <div className="bg-red-100 p-4 rounded-lg shadow-lg text-center">
-                  <div className="text-2xl font-semibold text-red-600">
-                    Phosphorus
-                  </div>
-                  <p className="text-xl font-bold text-red-700 mt-2">
-                    {npkData?.phosphorus || "N/A"}
-                  </p>
-                </div>
-                <div className="bg-yellow-100 p-4 rounded-lg shadow-lg text-center">
-                  <div className="text-2xl font-semibold text-yellow-600">
-                    Potassium
-                  </div>
-                  <p className="text-xl font-bold text-yellow-700 mt-2">
-                    {npkData?.potassium || "N/A"}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* NPK Sensor History Chart */}
-            {npkHistoryData.length > 0 && (
-              <Card className="mt-6 p-6">
-                <h3 className="text-lg font-medium text-gray-900">
-                  NPK Sensor History
-                </h3>
+              
+              <Card className="p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">NPK Sensor History</h3>
                 <div className="mt-4 h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={npkHistoryData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="index"
-                        label={{
-                          value: "Measurement",
-                          position: "insideBottomRight",
-                          offset: -5,
-                        }}
-                      />
+                      <XAxis dataKey="index" label={{ value: "Measurement", position: "insideBottomRight", offset: -5 }} />
                       <YAxis />
                       <Tooltip />
-                      <Line
-                        type="monotone"
-                        dataKey="nitrogen"
-                        name="Nitrogen"
-                        stroke="#10b981"
-                        strokeWidth={2}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="phosphorus"
-                        name="Phosphorus"
-                        stroke="#ef4444"
-                        strokeWidth={2}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="potassium"
-                        name="Potassium"
-                        stroke="#fbbf24"
-                        strokeWidth={2}
-                      />
+                      <Line type="monotone" dataKey="nitrogen" name="Nitrogen" stroke="#10b981" strokeWidth={2} />
+                      <Line type="monotone" dataKey="phosphorus" name="Phosphorus" stroke="#ef4444" strokeWidth={2} />
+                      <Line type="monotone" dataKey="potassium" name="Potassium" stroke="#fbbf24" strokeWidth={2} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               </Card>
-            )}
+
+              
+              <Card className="p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">NPK Control</h3>
+                <div className="flex flex-col justify-center items-center h-40">
+                  <button
+                    onClick={handleNpkCommand}
+                    className={`w-20 h-20 rounded-lg flex items-center justify-center transition duration-300 ${
+                      npkCommandStatus ? "bg-indigo-500 hover:bg-indigo-600" : "bg-gray-300 hover:bg-gray-400"
+                    }`}
+                    title={npkCommandStatus ? "Command Sent" : "Send Command"}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </button>
+                  <p className="mt-2 text-sm text-gray-700 font-medium">Send Command</p>
+                </div>
+              </Card>
+            </div> */}
           </div>
         </div>
       </div>
