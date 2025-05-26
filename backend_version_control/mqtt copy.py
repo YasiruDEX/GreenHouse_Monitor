@@ -5,23 +5,22 @@ from collections import deque
 import firebase_admin
 from firebase_admin import credentials, db
 from datetime import datetime
-from pytz import timezone
 
 def get_current_stage(now: datetime) -> tuple[str, int]:
-    stage1_duration = 3
-    stage1_value = 30
+    stage1_duration = 3  
+    stage1_value = 2000
 
     stage2_duration = 3
-    stage2_value = 5
+    stage2_value = 2400
 
-    stage3_duration = 3
-    stage3_value = 50
+    stage3_duration = 3  
+    stage3_value = 2300
 
-    stage4_duration = 2
-    stage4_value = 40
+    stage4_duration = 2  
+    stage4_value = 2500
 
-    stage5_duration = 1
-    stage5_value = 20
+    stage5_duration = 1  
+    stage5_value = 1400
 
     # --- Stage Calculation ---
     total_duration = stage1_duration + stage2_duration + stage3_duration + stage4_duration + stage5_duration
@@ -54,7 +53,7 @@ def get_current_stage(now: datetime) -> tuple[str, int]:
     print(f"[INFO] Elapsed Time Since Start: {months_passed} months")
     return stage, Water_Supply
 
-now = datetime.now(timezone("Asia/Colombo"))
+now = datetime.now()  
 print(f"[INFO] Current Date and Time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
 stage, Water_Supply = get_current_stage(now)
@@ -63,12 +62,7 @@ time.sleep(2)
 
 # --- Global Variables ---
 prev_water_command = False
-last_supply = "morning"
-
-prev_fan_control_data = "true"
-prev_npk_command = "true"
-prev_mixer_command = 0
-prev_supply_command = 0
+last_supply = "none"
 
 
 # --- Firebase Initialization ---
@@ -84,7 +78,7 @@ DATA_TOPIC = "Bellpepergreen/data"
 COMMAND_TOPIC = "Bellpepergreen/command"
 CLIENT_ID = "python_mqtt_combined"
 
-# Buffers for sensor data
+# --- Buffers for sensor data ---
 buffers = {
     "Humidity": deque(maxlen=6),
     "Temperature": deque(maxlen=6),
@@ -100,63 +94,8 @@ buffers = {
     "K": deque(maxlen=5),
 }
 
-# Global state
-prev_water_command = False
-last_supply = None
-
-# MQTT Client Setup
+# --- MQTT Client Setup ---
 client = mqtt.Client(client_id=CLIENT_ID, protocol=mqtt.MQTTv311)
-
-def on_connect(client, userdata, flags, rc):
-    if rc == 0:
-        print("[INFO] Successfully connected to MQTT broker.")
-        client.subscribe(DATA_TOPIC)
-        print(f"[INFO] Subscribed to topic: {DATA_TOPIC}")
-    else:
-        print(f"❌ Connection failed with code {rc}")
-
-client.on_connect = on_connect
-
-# Handle incoming sensor data
-client.on_message = lambda client, userdata, msg: handle_message(msg)
-def handle_message(msg):
-    try:
-        payload = msg.payload.decode('utf-8')
-        data = json.loads(payload)
-        greenhouse = data.get("GreenHouse1", {})
-        for key in buffers:
-            if key in greenhouse:
-                buffers[key].append(greenhouse[key])
-
-        # Update Firebase
-        db.reference("GreenHouse_1/Green_House_Sensors").update({
-            "Humidity": list(buffers["Humidity"]),
-            "Temperature": list(buffers["Temperature"])
-        })
-        db.reference("GreenHouse_1/Soil_Data").update({
-            "Moisture": list(buffers["SoilMoisture"]),
-            "PH": list(buffers["SoilPH"])
-        })
-        db.reference("GreenHouse_1/Tank_PH").update({
-            "Acid": list(buffers["acidLevel"]),
-            "Base": list(buffers["baseLevel"])
-        })
-        db.reference("GreenHouse_1/Water_Tank_Data").update({
-            "Balancing": list(buffers["mixerLevel"]),
-            "Supply": list(buffers["supplyLevel"]),
-            "rainwater": list(buffers["rainLevel"])
-        })
-        db.reference("NPK_Sensor_Data").update({
-            "nitrogen": buffers["N"][-1] if buffers["N"] else 0,
-            "phosphorus": buffers["P"][-1] if buffers["P"] else 0,
-            "potassium": buffers["K"][-1] if buffers["K"] else 0
-        })
-
-        print("[DEBUG] Buffered Sensor Data:")
-        for key, q in buffers.items():
-            print(f"  {key}: {list(q)}")
-    except Exception as e:
-        print(f"[ERROR] on_message handling failed: {e}")
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -214,93 +153,61 @@ def on_message(client, userdata, msg):
 
     except json.JSONDecodeError:
         print(f"[WARN] Received malformed JSON: {payload}")
-        
+
 def get_and_send_command():
-    global prev_water_command, last_supply
-    global prev_fan_control_data
-    global prev_npk_command
-    global prev_mixer_command
-    global prev_supply_command
-
-    now = datetime.now(timezone("Asia/Colombo"))
-
-    stage, Water_Supply = get_current_stage(now)
+    global Water_Supply
+    global prev_water_command
+    global last_supply
     try:
         fan_control_data = db.reference("GreenHouse_1/Fan_Control").get()
         npk_command = db.reference("NPK_Sensor_Data/command/command").get()
         water_command = db.reference("GreenHouse_1/Water_Control/command").get()
-
+        
         if water_command and prev_water_command != water_command:
             mixer_command = Water_Supply
             supply_command = Water_Supply
         else:
             mixer_command = 0
             supply_command = 0
-
+            
         prev_water_command = water_command
-
-        # Time-based automatic watering
-        next_water = None
-        if now.hour < 9:
-            next_water = now.replace(hour=9, minute=0, second=0, microsecond=0)
-            period = 'morning'
-        elif now.hour < 18:
-            next_water = now.replace(hour=18, minute=0, second=0, microsecond=0)
-            period = 'evening'
-        else:
-            next_water = (now + timedelta(days=1)).replace(hour=9, minute=0, second=0, microsecond=0)
-            period = 'morning'
-
-        # Scheduled routines
-        if period == 'morning' and now.hour == 9 and last_supply != period:
+        
+        
+        # --- Time-based Control Logic ---
+        current_hour = now.hour
+        print(f"[INFO] Evaluating commands for hour: {current_hour}")
+        if current_hour == 9 and last_supply != "morning":
             print("[ACTION] Morning routine: Sending water supply command.")
+            last_supply = "morning"
             mixer_command = Water_Supply
             supply_command = Water_Supply / 2
-            last_supply = period
-        elif period == 'evening' and now.hour == 18 and last_supply != period:
+        elif current_hour == 18 and last_supply != "evening":
             print("[ACTION] Evening routine: Reducing mixer, maintaining supply.")
+            last_supply = "evening"
             mixer_command = 0
             supply_command = Water_Supply / 2
-            last_supply = period
 
-        # Publish command
         command_data = {
             "Fan_Control": fan_control_data,
             "NPK_Command": npk_command,
             "mixer_control": mixer_command,
-            "suppy_control": supply_command
+            "supply_control": supply_command,
         }
 
-        if (prev_fan_control_data != fan_control_data) or (prev_npk_command != npk_command) or (prev_mixer_command != mixer_command) or (prev_supply_command != supply_command):
-          client.publish(COMMAND_TOPIC, json.dumps(command_data))
-          if (prev_mixer_command) > 0 or (prev_supply_command) > 0 :
-            time.sleep(10)
-          print(f"[INFO] Command published: {command_data}")
-
-        prev_fan_control_data = fan_control_data
-        prev_npk_command = npk_command
-        prev_mixer_command = mixer_command
-        prev_supply_command = supply_command
-
-        # Time until next automatic watering
-        delta = next_water - now
-        hrs, rem = divmod(int(delta.total_seconds()), 3600)
-        mins, secs = divmod(rem, 60)
-        print(f"[INFO] Time until next automatic watering ({period}): {hrs}h {mins}m {secs}s")
+        client.publish(COMMAND_TOPIC, json.dumps(command_data))
+        print(f"[INFO] Command published to MQTT: {json.dumps(command_data)}")
     except Exception as e:
         print(f"[ERROR] Failed to send command: {e}")
 
-# Main loop
-
 def main():
+    client.on_connect = on_connect
+    client.on_message = on_message
     client.connect(BROKER, PORT, keepalive=60)
     client.loop_start()
-    client.on_message = on_message
 
     while True:
         get_and_send_command()
         time.sleep(1)
 
 if __name__ == "__main__":
-    print(f"[INFO] Starting MQTT-Firebase bridge at {datetime.now()}")
     main()
