@@ -1,1 +1,1 @@
-https://dbpcgqcl-1234.asse.devtunnels.ms/v1/chat/completions
+http://localhost:1234/v1/chat/completions
